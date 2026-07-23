@@ -406,11 +406,8 @@
     mdBody.classList.add('cursor-blink');
     scrollBottom();
 
-    var mode = document.querySelector('input[name="mode"]:checked');
-    mode = mode ? mode.value : 'single';
-
-    // 1) 个股数据探测（仅个股分析模式）
-    var detectP = mode === 'single' ? Stock.detect(text) : Promise.resolve({ status: 'none' });
+    // 个股数据探测（如输入中含股票名称/代码则获取实时数据）
+    var detectP = Stock.detect(text);
 
     detectP.catch(function () { return { status: 'none' }; }).then(function (res) {
       var stockCtx = '';
