@@ -18,6 +18,7 @@ import os
 import re
 
 PORT = int(os.environ.get("PORT", "8770"))
+ROUTE = os.environ.get("ROUTE", "/proxy/chat")
 UPSTREAM = "https://tokenhub.tencentmaas.com/v1/chat/completions"
 
 
@@ -55,7 +56,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
 
     def do_POST(self):
-        if self.path.rstrip("/") in ("/proxy/chat",):
+        if self.path.rstrip("/") == ROUTE.rstrip("/"):
             self._proxy_chat()
             return
         self.send_response(404)
@@ -108,7 +109,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     socketserver.TCPServer.allow_reuse_address = True
-    with socketserver.TCPServer(("", PORT), Handler) as httpd:
+    # 仅监听回环地址：本地/线上均由本机（浏览器或 nginx）访问，不对外暴露端口
+    with socketserver.TCPServer(("127.0.0.1", PORT), Handler) as httpd:
         print("AskMaster 本地代理已启动: http://127.0.0.1:%d/  (Ctrl+C 退出)" % PORT)
         try:
             httpd.serve_forever()
