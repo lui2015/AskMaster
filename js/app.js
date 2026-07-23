@@ -643,35 +643,21 @@
     el.inpMessage.setAttribute('placeholder', window.innerWidth <= 820 ? shortHint : longHint);
   }
 
-  // 阻止原生 APP/浏览器下拉刷新，同时保留内部原生顺滑滚动。
-  // 方案：滚动容器在触摸开始时把 scrollTop 从顶/底边界推离 1px，
-  // 使 webview 无法在边界处触发下拉刷新；内部滚动仍走原生，顺滑不卡。
+  // 阻止顶部下拉刷新，同时完全保留原生顺滑滚动。
+  // 关键：不使用 non-passive 的 touchmove/preventDefault（那会让浏览器脱离合成器快速滚动路径，导致卡顿）。
+  // 仅在触摸开始时（被动监听，零成本）把滚动容器从精确边界推离 1px，
+  // 使 webview 无法在“最顶端继续下拉”时触发刷新；滚动本身仍是原生的，顺滑如其他网页。
   function installOverscrollGuard() {
     if (!('ontouchstart' in window)) return;
     var SCROLLERS = '.sidebar, .chat-area, .modal-body';
-
-    // 1) 触摸开始：把可滚动容器推离精确边界
     document.addEventListener('touchstart', function (e) {
       var sc = e.target.closest && e.target.closest(SCROLLERS);
       if (!sc) return;
       var max = sc.scrollHeight - sc.clientHeight;
-      if (max <= 0) return; // 内容未溢出，无需处理
+      if (max <= 0) return;
       if (sc.scrollTop <= 0) sc.scrollTop = 1;
       else if (sc.scrollTop >= max) sc.scrollTop = max - 1;
     }, { passive: true });
-
-    // 2) 触摸移动：仅在“非滚动区域”（头部/输入区/示例等固定壳层）拦截，
-    //    避免拖动固定区域时触发原生刷新；滚动容器与输入框放行，保持原生体验。
-    document.addEventListener('touchmove', function (e) {
-      if (e.cancelable === false) return;
-      if (e.touches.length > 1) return; // 双指缩放等放行
-      var t = e.target;
-      if (t.closest && t.closest('textarea, input, select')) return;
-      var sc = t.closest && t.closest(SCROLLERS);
-      // 容器可真正滚动时放行原生滚动；否则（含固定壳层/未溢出容器）拦截，阻止下拉刷新
-      if (sc && sc.scrollHeight - sc.clientHeight > 0) return;
-      e.preventDefault();
-    }, { passive: false });
   }
 
   function bindEvents() {
