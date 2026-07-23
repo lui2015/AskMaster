@@ -422,6 +422,13 @@
           assistantMsg.content = full;
           mdBody.innerHTML = renderMarkdown(full);
           scrollBottom();
+        },
+        onRetry: function (n, max, info) {
+          // 模型服务繁忙/限流时，提示正在重试而不是假装失败
+          mdBody.classList.remove('cursor-blink');
+          mdBody.innerHTML = '<span style="color:var(--amber)">⏳ ' +
+            (info.status === 429 ? '模型服务繁忙（限流）' : '模型服务暂不可用') +
+            '，正在重试（' + n + '/' + max + '）… 请稍候</span>';
         }
       });
     }).then(function (full) {
@@ -435,8 +442,12 @@
       scrollBottom();
     }).catch(function (err) {
       mdBody.classList.remove('cursor-blink');
+      var is429 = /429/.test(err.message || '');
+      var hint = is429
+        ? '模型服务当前繁忙或触发限流（429）。已自动重试仍失败，请稍等片刻再试；若持续出现，可在「⚙️ 模型配置」换用 DeepSeek / 通义千问等其他预设。'
+        : '若为跨域(CORS)错误，请通过本地/线上 HTTP 服务访问本页面，并确认该模型接口允许浏览器直接调用。';
       mdBody.innerHTML = '<span style="color:var(--red)">✗ 请求失败：' + escapeHtml(err.message || '未知错误') +
-        '</span><br><span style="color:var(--text-dim);font-size:12px">若为跨域(CORS)错误，请通过本地/线上 HTTP 服务访问本页面，并确认该模型接口允许浏览器直接调用。</span>';
+        '</span><br><span style="color:var(--text-dim);font-size:12px">' + escapeHtml(hint) + '</span>';
       // 失败的助手消息不持久化，回滚 title 若首条
       setSending(false);
     });

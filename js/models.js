@@ -58,6 +58,9 @@
       var cfg = opts.config || {};
       var endpoint = normalizeUrl(cfg.baseUrl);
       var stream = opts.stream !== false;
+      // 429(限流)/5xx(服务端繁忙) 自动重试，避免偶发繁忙直接报错
+      var maxRetry = (opts.maxRetry != null) ? opts.maxRetry : 3;
+      var retryable = function (status) { return status === 429 || status === 500 || status === 502 || status === 503 || status === 504; };
 
       var body = {
         model: cfg.model,
@@ -72,26 +75,42 @@
         'Authorization': 'Bearer ' + (cfg.apiKey || '')
       };
 
-      return fetch(endpoint, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(body),
-        signal: opts.signal
-      }).then(function (resp) {
-        if (!resp.ok) {
-          return resp.text().then(function (t) {
-            var msg = t;
-            try { var j = JSON.parse(t); msg = (j.error && (j.error.message || j.error.type)) || t; } catch (e) {}
-            throw new Error('接口返回 ' + resp.status + '：' + (msg || resp.statusText));
-          });
-        }
-        if (!stream) {
-          return resp.json().then(function (j) {
-            return (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '';
-          });
-        }
-        return LLM._readStream(resp, opts.onDelta);
-      });
+      function attempt(n) {
+        return fetch(endpoint, {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(body),
+          signal: opts.signal
+        }).then(function (resp) {
+          if (!resp.ok) {
+            // 读取错误体，提取可读信息
+            return resp.text().then(function (t) {
+              var msg = t;
+              try { var j = JSON.parse(t); msg = (j.error && (j.error.message || j.error.type)) || t; } catch (e) {}
+              var info = { status: resp.status, msg: msg || resp.statusText };
+              // 可重试的限流/繁忙错误，且还有重试次数
+              if (retryable(resp.status) && n < maxRetry) {
+                var wait = Math.min(1000 * Math.pow(2, n), 8000); // 指数退避，封顶 8s
+                if (opts.onRetry) { try { opts.onRetry(n + 1, maxRetry, info); } catch (e) {} }
+                return new Promise(function (resolve) { setTimeout(resolve, wait); }).then(function () {
+                  return attempt(n + 1);
+                });
+              }
+              var label = resp.status === 429 ? '接口返回 429（模型服务繁忙/限流）' : '接口返回 ' + resp.status;
+              var extra = resp.status === 429 ? '。可稍后重试，或换用其他模型预设。' : '';
+              throw new Error(label + '：' + info.msg + extra);
+            });
+          }
+          if (!stream) {
+            return resp.json().then(function (j) {
+              return (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '';
+            });
+          }
+          return LLM._readStream(resp, opts.onDelta);
+        });
+      }
+
+      return attempt(0);
     },
 
     _readStream: function (resp, onDelta) {
