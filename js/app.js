@@ -643,38 +643,34 @@
     el.inpMessage.setAttribute('placeholder', window.innerWidth <= 820 ? shortHint : longHint);
   }
 
-  // 阻止原生 APP/浏览器在滚动到顶/底时触发下拉刷新（CSS overscroll-behavior 在部分 webview 内无效）
+  // 阻止原生 APP/浏览器下拉刷新，同时保留内部原生顺滑滚动。
+  // 方案：滚动容器在触摸开始时把 scrollTop 从顶/底边界推离 1px，
+  // 使 webview 无法在边界处触发下拉刷新；内部滚动仍走原生，顺滑不卡。
   function installOverscrollGuard() {
     if (!('ontouchstart' in window)) return;
-    var startY = 0;
-    function findScrollable(node) {
-      while (node && node !== document.body) {
-        var cs = getComputedStyle(node);
-        if (node.scrollHeight > node.clientHeight + 1 &&
-            (cs.overflowY === 'auto' || cs.overflowY === 'scroll')) {
-          return node;
-        }
-        node = node.parentNode;
-      }
-      return null;
-    }
+    var SCROLLERS = '.sidebar, .chat-area, .modal-body';
+
+    // 1) 触摸开始：把可滚动容器推离精确边界
     document.addEventListener('touchstart', function (e) {
-      if (e.touches.length === 1) startY = e.touches[0].clientY;
+      var sc = e.target.closest && e.target.closest(SCROLLERS);
+      if (!sc) return;
+      var max = sc.scrollHeight - sc.clientHeight;
+      if (max <= 0) return; // 内容未溢出，无需处理
+      if (sc.scrollTop <= 0) sc.scrollTop = 1;
+      else if (sc.scrollTop >= max) sc.scrollTop = max - 1;
     }, { passive: true });
+
+    // 2) 触摸移动：仅在“非滚动区域”（头部/输入区/示例等固定壳层）拦截，
+    //    避免拖动固定区域时触发原生刷新；滚动容器与输入框放行，保持原生体验。
     document.addEventListener('touchmove', function (e) {
       if (e.cancelable === false) return;
-      // 输入框内允许原生行为（选择文字、滚动内容）
-      if (e.target.closest && e.target.closest('textarea, input, select')) return;
-      var dy = e.touches[0].clientY - startY;
-      var sc = findScrollable(e.target);
-      if (sc) {
-        var atTop = sc.scrollTop <= 0;
-        var atBottom = sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 1;
-        // 已到边界仍继续纵向拖动：内容无法再滚动，直接拦截，阻止原生下拉刷新
-        if ((dy > 0 && atTop) || (dy < 0 && atBottom)) e.preventDefault();
-      } else {
-        e.preventDefault();
-      }
+      if (e.touches.length > 1) return; // 双指缩放等放行
+      var t = e.target;
+      if (t.closest && t.closest('textarea, input, select')) return;
+      var sc = t.closest && t.closest(SCROLLERS);
+      // 容器可真正滚动时放行原生滚动；否则（含固定壳层/未溢出容器）拦截，阻止下拉刷新
+      if (sc && sc.scrollHeight - sc.clientHeight > 0) return;
+      e.preventDefault();
     }, { passive: false });
   }
 
