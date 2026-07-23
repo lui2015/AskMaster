@@ -71,6 +71,15 @@
     state.masters = Masters.init();
     state.conversations = Store.getConversations();
     state.modelConfig = Store.getModelConfig();
+    // 首次使用且无任何配置时，默认接入腾讯混元(TokenHub)
+    if (!state.modelConfig.baseUrl && !state.modelConfig.provider) {
+      var def = LLM.findProvider('hunyuan-mas');
+      if (def) {
+        state.modelConfig.provider = def.id;
+        state.modelConfig.baseUrl = def.baseUrl;
+        state.modelConfig.model = def.model;
+      }
+    }
     var saved = Store.getState();
     state.currentMasterId = saved.currentMasterId || state.masters[0].id;
     if (!getMaster(state.currentMasterId)) state.currentMasterId = state.masters[0].id;

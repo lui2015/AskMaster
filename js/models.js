@@ -6,6 +6,7 @@
 
   // 国产大模型预设（均走 OpenAI 兼容接口 /chat/completions）
   var PROVIDERS = [
+    { id: 'hunyuan-mas', name: '腾讯混元(TokenHub)', baseUrl: 'https://tokenhub.tencentmaas.com/v1', model: 'hy3' },
     { id: 'deepseek', name: 'DeepSeek', baseUrl: 'https://api.deepseek.com', model: 'deepseek-chat' },
     { id: 'qwen', name: '通义千问', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-plus' },
     { id: 'glm', name: '智谱GLM', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-flash' },
