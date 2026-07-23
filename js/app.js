@@ -670,8 +670,8 @@
       if (sc) {
         var atTop = sc.scrollTop <= 0;
         var atBottom = sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 1;
-        // 仅在已到边界且确有纵向拖动时拦截；小幅横向拖动（如滚动宽代码块）放行
-        if (Math.abs(dy) > 3 && ((dy > 0 && atTop) || (dy < 0 && atBottom))) e.preventDefault();
+        // 已到边界仍继续纵向拖动：内容无法再滚动，直接拦截，阻止原生下拉刷新
+        if ((dy > 0 && atTop) || (dy < 0 && atBottom)) e.preventDefault();
       } else {
         e.preventDefault();
       }
