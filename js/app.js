@@ -80,6 +80,10 @@
         state.modelConfig.model = def.model;
       }
     }
+    // 本地默认配置优先（local-config.js，已被 gitignore 忽略，含 API Key）
+    if (global.LOCAL_CONFIG && global.LOCAL_CONFIG.apiKey && !state.modelConfig.apiKey) {
+      state.modelConfig.apiKey = global.LOCAL_CONFIG.apiKey;
+    }
     var saved = Store.getState();
     state.currentMasterId = saved.currentMasterId || state.masters[0].id;
     if (!getMaster(state.currentMasterId)) state.currentMasterId = state.masters[0].id;
