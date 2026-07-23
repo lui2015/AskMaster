@@ -21,7 +21,7 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-html, body { height: 100%; }
+html, body { height: 100%; overscroll-behavior-y: none; }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
@@ -30,9 +30,20 @@ body {
               var(--bg);
   color: var(--text);
   overflow: hidden;
+  /* 锁定整页，避免移动端橡皮筋/下拉刷新与内部滑动冲突 */
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  -webkit-text-size-adjust: 100%;
 }
 
-#app { display: flex; height: 100vh; }
+#app { display: flex; height: 100vh; height: 100dvh; }
+
+/* 滚动容器：内部滚动不外溢到页面，并启用惯性滚动 */
+.sidebar, .chat-area, .modal-body, .conv-list, .master-list {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
 
 /* ============ 侧边栏 ============ */
 .sidebar {

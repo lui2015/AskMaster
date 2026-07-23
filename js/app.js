@@ -293,10 +293,17 @@
   }
 
   // ================= 对话渲染 =================
+  function refreshSamples() {
+    var c = currentConv();
+    var hasMsg = !!(c && c.messages.length);
+    el.samples.style.display = hasMsg ? 'none' : '';
+  }
+
   function renderChat() {
     var c = currentConv();
     var m = getMaster(state.currentMasterId);
     el.chatArea.innerHTML = '';
+    refreshSamples();
     if (!c || !c.messages.length) {
       var hero = document.createElement('div');
       hero.className = 'welcome-hero';
@@ -385,6 +392,7 @@
     if (el.chatArea.querySelector('.welcome-hero')) el.chatArea.innerHTML = '';
     appendMessageEl('user', text, null, master);
     scrollBottom();
+    refreshSamples();
 
     el.inpMessage.value = '';
     autoGrow();
