@@ -106,6 +106,7 @@
     renderCurrentMaster();
     renderChat();
     bindEvents();
+    autoGrow();
   }
 
   // ================= 模型配置 =================
@@ -626,7 +627,17 @@
     el.inpMessage.style.height = Math.min(el.inpMessage.scrollHeight, 160) + 'px';
   }
 
+  // 窄屏使用更短的占位提示，避免长文本在单行输入框内被截断
+  function applyComposerPlaceholder() {
+    var longHint = '向大师提问，可输入股票名称或代码，如：贵州茅台 / 600519 值得长期持有吗？';
+    var shortHint = '向大师提问，如：贵州茅台 / 600519 值得持有吗？';
+    el.inpMessage.setAttribute('placeholder', window.innerWidth <= 820 ? shortHint : longHint);
+  }
+
   function bindEvents() {
+    applyComposerPlaceholder();
+    window.addEventListener('resize', applyComposerPlaceholder);
+
     $('btnNewChat').onclick = newChat;
     $('btnSend').onclick = send;
     $('btnSaveModel').onclick = saveModel;

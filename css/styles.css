@@ -370,10 +370,33 @@ input:focus, textarea:focus, select:focus { border-color: var(--primary); }
   /* 对话区与输入框间距收紧 */
   .chat-area { padding: 14px; gap: 12px; }
   .samples { padding: 0 14px 8px; }
-  .composer { padding: 10px 12px; }
-  .composer textarea { font-size: 16px; max-height: 110px; }
+
+  /* 底部输入框：留出 iPhone 底部安全区，初始高度更稳定 */
+  .composer {
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+    gap: 8px;
+  }
+  .composer textarea {
+    font-size: 16px;
+    max-height: 120px;
+    line-height: 1.5;
+  }
+  .send-btn { width: 42px; height: 42px; }
+
+  /* 文章正文：防止长串/代码溢出，允许自动换行 */
   .msg { max-width: 100%; }
-  .msg.user .md-body { max-width: 88%; }
+  .msg-bubble { overflow-wrap: anywhere; word-break: break-word; }
+  .msg-bubble table { display: block; width: 100%; overflow-x: auto; }
+  .msg-bubble img { max-width: 100%; height: auto; }
+
+  /* 股票数据卡：窄屏改为两列，避免挤压变形 */
+  .stock-head { flex-wrap: wrap; }
+  .stock-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* 欢迎页在窄屏适当缩小 */
+  .welcome-hero .hero-avatar { font-size: 48px; }
+  .welcome-hero h2 { font-size: 19px; }
+  .welcome-hero p { font-size: 13px; }
 
   /* 弹窗接近全宽并优化底部按钮排布 */
   .modal { padding: 16px; width: 92vw; max-height: 88vh; }
