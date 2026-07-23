@@ -315,9 +315,83 @@ input:focus, textarea:focus, select:focus { border-color: var(--primary); }
 ::-webkit-scrollbar-thumb:hover { background: #2d3f5e; }
 ::-webkit-scrollbar-track { background: transparent; }
 
+/* 移动端专用按钮默认隐藏，仅在窄屏显示 */
+.icon-btn.menu-btn,
+.icon-btn.sidebar-close { display: none; }
+
 /* 响应式 */
 @media (max-width: 820px) {
-  .sidebar { position: fixed; z-index: 50; height: 100vh; transform: translateX(-100%); transition: transform .2s; }
+  .icon-btn.menu-btn,
+  .icon-btn.gear-btn,
+  .icon-btn.sidebar-close { display: inline-flex; }
+
+  /* 侧栏改为可滑出抽屉，而非永久隐藏 */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: min(320px, 86vw);
+    z-index: 60;
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+    box-shadow: 2px 0 18px rgba(0, 0, 0, .55);
+    padding-top: env(safe-area-inset-top, 0);
+  }
   .sidebar.open { transform: translateX(0); }
-  .analysis-mode { display: none; }
+  .sidebar ~ .sidebar-mask,
+  .sidebar-mask {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, .5);
+    z-index: 55; opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s ease;
+  }
+  .sidebar.open ~ .sidebar-mask { opacity: 1; pointer-events: auto; }
+  .sidebar-close { margin-left: auto; }
+
+  /* 头部：汉堡 + 大师 + 齿轮一行，分析模式换行显示 */
+  .main-header {
+    flex-wrap: wrap;
+    padding: 10px 14px;
+    gap: 8px;
+  }
+  .current-master { flex: 1 1 auto; min-width: 0; }
+  .current-master .cm-info { min-width: 0; overflow: hidden; }
+  .current-master .cm-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .analysis-mode {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    gap: 10px;
+    padding-top: 10px;
+    margin-top: 2px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* 对话区与输入框间距收紧 */
+  .chat-area { padding: 14px; gap: 12px; }
+  .samples { padding: 0 14px 8px; }
+  .composer { padding: 10px 12px; }
+  .composer textarea { font-size: 16px; max-height: 110px; }
+  .msg { max-width: 100%; }
+  .msg.user .md-body { max-width: 88%; }
+
+  /* 弹窗接近全宽并优化底部按钮排布 */
+  .modal { padding: 16px; width: 92vw; max-height: 88vh; }
+  .modal-header h2 { font-size: 16px; }
+  .modal-body { padding: 14px; }
+  .modal-footer { padding: 12px 14px; flex-wrap: wrap; gap: 8px; }
+  .modal-footer .btn { flex: 1 1 auto; }
+  .preset-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+
+  /* 极窄屏微调 */
+  @media (max-width: 380px) {
+    .master-select { max-width: 42vw; }
+    .preset-grid { grid-template-columns: 1fr 1fr; }
+  }
+}
+
+/* 超小高度屏：压缩输入区 */
+@media (max-height: 560px) {
+  .composer textarea { max-height: 70px; }
+  .chat-area { padding: 10px; }
 }

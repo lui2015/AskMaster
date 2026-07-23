@@ -20,6 +20,11 @@
   var $ = function (id) { return document.getElementById(id); };
   var el = {};
 
+  // 移动端抽屉侧栏开合
+  var sidebarEl = document.querySelector('.sidebar');
+  function openSidebar() { if (sidebarEl) sidebarEl.classList.add('open'); }
+  function closeSidebar() { if (sidebarEl) sidebarEl.classList.remove('open'); }
+
   // ---------- 工具 ----------
   function escapeHtml(s) {
     return String(s == null ? '' : s)
@@ -193,6 +198,7 @@
     renderMasterList();
     renderCurrentMaster();
     renderChat();
+    closeSidebar();
   }
 
   function renderCurrentMaster() {
@@ -244,6 +250,7 @@
     renderConvList();
     renderCurrentMaster();
     renderChat();
+    closeSidebar();
   }
 
   function deleteConv(id) {
@@ -261,6 +268,7 @@
     renderConvList();
     renderChat();
     el.inpMessage.focus();
+    closeSidebar();
   }
 
   function ensureConv() {
@@ -483,6 +491,7 @@
   // ================= 大师编辑器 =================
   function openMasterManage() {
     state.editingMasterId = null;
+    closeSidebar();
     el.masterModalTitle.textContent = '大师管理';
     var html = '<div class="master-manage-list">';
     state.masters.forEach(function (m) {
@@ -625,6 +634,11 @@
     $('btnManageMasters').onclick = openMasterManage;
     $('btnCloseMasterModal').onclick = function () { showModal(false); };
     el.masterModal.onclick = function (e) { if (e.target === el.masterModal) showModal(false); };
+
+    // 移动端抽屉侧栏
+    $('btnMenu').onclick = openSidebar;
+    $('btnCloseSidebar').onclick = closeSidebar;
+    $('sidebarMask').onclick = closeSidebar;
 
     $('btnToggleKey').onclick = function () {
       el.inpApiKey.type = el.inpApiKey.type === 'password' ? 'text' : 'password';
