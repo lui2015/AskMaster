@@ -24,7 +24,10 @@
   }
 
   function normalizeUrl(baseUrl) {
-    var url = (baseUrl || '').trim().replace(/\/+$/, '');
+    var url = (baseUrl || '').trim();
+    // 相对路径（以 / 开头）：本地代理，直接使用，不加 /chat/completions
+    if (url.indexOf('/') === 0) return url;
+    url = url.replace(/\/+$/, '');
     // 若用户没写 /v1 等版本路径，按常见约定补 /v1（DeepSeek 允许两者，qwen/glm 已含版本路径）
     if (/\/v\d+$/.test(url) || /compatible-mode\/v1$/.test(url) || /paas\/v4$/.test(url) || /\/api\/v3$/.test(url)) {
       return url + '/chat/completions';

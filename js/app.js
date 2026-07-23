@@ -71,18 +71,22 @@
     state.masters = Masters.init();
     state.conversations = Store.getConversations();
     state.modelConfig = Store.getModelConfig();
-    // 首次使用且无任何配置时，默认接入腾讯混元(TokenHub)
-    if (!state.modelConfig.baseUrl && !state.modelConfig.provider) {
+    // 本地默认配置优先（local-config.js，已被 gitignore 忽略，含 API Key）
+    var lc = global.LOCAL_CONFIG;
+    if (lc && lc.useProxy && lc.proxyUrl) {
+      // 经本地代理直连混元，绕开浏览器 CORS
+      state.modelConfig.provider = 'hunyuan-mas';
+      state.modelConfig.baseUrl = lc.proxyUrl;
+      state.modelConfig.model = (LLM.findProvider('hunyuan-mas') || {}).model || 'hy3';
+      if (lc.apiKey && !state.modelConfig.apiKey) state.modelConfig.apiKey = lc.apiKey;
+    } else if (!state.modelConfig.baseUrl && !state.modelConfig.provider) {
       var def = LLM.findProvider('hunyuan-mas');
       if (def) {
         state.modelConfig.provider = def.id;
         state.modelConfig.baseUrl = def.baseUrl;
         state.modelConfig.model = def.model;
       }
-    }
-    // 本地默认配置优先（local-config.js，已被 gitignore 忽略，含 API Key）
-    if (global.LOCAL_CONFIG && global.LOCAL_CONFIG.apiKey && !state.modelConfig.apiKey) {
-      state.modelConfig.apiKey = global.LOCAL_CONFIG.apiKey;
+      if (lc && lc.apiKey && !state.modelConfig.apiKey) state.modelConfig.apiKey = lc.apiKey;
     }
     var saved = Store.getState();
     state.currentMasterId = saved.currentMasterId || state.masters[0].id;
