@@ -107,6 +107,7 @@
     renderChat();
     bindEvents();
     autoGrow();
+    installOverscrollGuard();
   }
 
   // ================= 模型配置 =================
@@ -640,6 +641,41 @@
     var longHint = '向大师提问，可输入股票名称或代码，如：贵州茅台 / 600519 值得长期持有吗？';
     var shortHint = '向大师提问，如：贵州茅台 / 600519 值得持有吗？';
     el.inpMessage.setAttribute('placeholder', window.innerWidth <= 820 ? shortHint : longHint);
+  }
+
+  // 阻止原生 APP/浏览器在滚动到顶/底时触发下拉刷新（CSS overscroll-behavior 在部分 webview 内无效）
+  function installOverscrollGuard() {
+    if (!('ontouchstart' in window)) return;
+    var startY = 0;
+    function findScrollable(node) {
+      while (node && node !== document.body) {
+        var cs = getComputedStyle(node);
+        if (node.scrollHeight > node.clientHeight + 1 &&
+            (cs.overflowY === 'auto' || cs.overflowY === 'scroll')) {
+          return node;
+        }
+        node = node.parentNode;
+      }
+      return null;
+    }
+    document.addEventListener('touchstart', function (e) {
+      if (e.touches.length === 1) startY = e.touches[0].clientY;
+    }, { passive: true });
+    document.addEventListener('touchmove', function (e) {
+      if (e.cancelable === false) return;
+      // 输入框内允许原生行为（选择文字、滚动内容）
+      if (e.target.closest && e.target.closest('textarea, input, select')) return;
+      var dy = e.touches[0].clientY - startY;
+      var sc = findScrollable(e.target);
+      if (sc) {
+        var atTop = sc.scrollTop <= 0;
+        var atBottom = sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 1;
+        // 仅在已到边界且确有纵向拖动时拦截；小幅横向拖动（如滚动宽代码块）放行
+        if (Math.abs(dy) > 3 && ((dy > 0 && atTop) || (dy < 0 && atBottom))) e.preventDefault();
+      } else {
+        e.preventDefault();
+      }
+    }, { passive: false });
   }
 
   function bindEvents() {
